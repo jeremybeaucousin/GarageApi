@@ -104,4 +104,32 @@ class GarageDAO @Inject()(db: Database){
     }
     garage
   }
+  
+  def deleteGarage(id: Int) = {
+    var deletedId: Int = -1
+    val conn = db.getConnection()
+
+    if(id != null) {
+      try {
+        val stmt = conn.createStatement
+        val request = s"DELETE " +
+            s"FROM ${GarageTableDefinitions.tableName} " + 
+            s"WHERE ${GarageTableDefinitions.tableName}.${GarageTableDefinitions.columns.id} =  ${id} " +
+            s"RETURNING ${GarageTableDefinitions.columns.id};"
+        
+        logger.debug(s"request : ${request}")
+        val rs = stmt.executeQuery(request)
+        
+        while (rs.next()) {
+          logger.debug(s"deleted Id result : ${rs.toString()}")
+          deletedId = rs.getInt(GarageTableDefinitions.columns.id)
+        }
+      } catch { 
+        case e: Exception => logger.error(s"An error occured on getGarage", e)
+      } finally {
+        conn.close()
+      }
+    }
+    deletedId
+  }
 }

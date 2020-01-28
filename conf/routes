@@ -6,3 +6,4 @@
 # Garages routes
 POST     /garages						fr.jbeaucousin.controllers.GarageController.addGarage
 GET      /garages/:id					fr.jbeaucousin.controllers.GarageController.getGarage(id: Int)
+DELETE   /garages/:id					fr.jbeaucousin.controllers.GarageController.deleteGarage(id: Int)

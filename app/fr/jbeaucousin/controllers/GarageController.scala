@@ -44,7 +44,7 @@ class GarageController @Inject()(
         val insertedId = garageDAO.addGarage(garage)
         logger.debug(s"InsertedId, $insertedId")
         if(insertedId > -1) {
-          Future.successful(Ok.withHeaders(
+          Future.successful(Created.withHeaders(
             ControllerConstants.HeaderFields.location -> routes.GarageController.getGarage(insertedId).absoluteURL())
           )  
         } else {
@@ -61,6 +61,17 @@ class GarageController @Inject()(
       if(garage != null) {
         logger.debug(s"garages found : ${garage.toString()}")
         Future.successful(Ok(Json.toJson(garage)))
+      } else {
+        Future.successful(NotFound)
+      }
+  }
+  
+  def deleteGarage(id: Int) = action.async { implicit request: Request[AnyContent] =>
+      logger.debug(s"id received : ${id.toString()}")
+      val deletedId = garageDAO.deleteGarage(id)
+      logger.debug(s"deletedId : , $deletedId")
+      if(deletedId > -1) {
+        Future.successful(Ok)
       } else {
         Future.successful(NotFound)
       }
