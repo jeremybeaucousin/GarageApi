@@ -40,36 +40,36 @@ class GarageDAO @Inject()(db: Database){
     insertedId
   }
   
-  def getGarages = {
-    val garages = List[Garage]()
-    val conn = db.getConnection()
-
-    try {
-      val stmt = conn.createStatement
-      val request = s"SELECT * " +
-          s"FROM ${GarageTableDefinitions.tableName};"
-      
-      logger.debug(s"request : ${request}")
-      val rs = stmt.executeQuery(request)
-      
-      while (rs.next()) {
-        logger.debug(s"inserted Id result : ${rs.toString()}")
-        val id = rs.getInt(s"${GarageTableDefinitions.columns.id}")
-        val name = rs.getString(s"${GarageTableDefinitions.columns.name}")
-        val address = rs.getString(s"${GarageTableDefinitions.columns.address}")
-        val creationDate = rs.getDate(s"${GarageTableDefinitions.columns.creationDate}")
-        val maxCarCapacity = rs.getInt(s"${GarageTableDefinitions.columns.maxCarCapacity}")
-        val currentGarage = Garage(Some(id), name, address, creationDate, maxCarCapacity)
-            
-        currentGarage :: garages 
-      }
-    } catch { 
-        case e: Exception => logger.error(s"An error occured on getGarages", e)
-    } finally {
-      conn.close()
-    }
-    garages
-  }
+//  def getGarages = {
+//    val garages = List[Garage]()
+//    val conn = db.getConnection()
+//
+//    try {
+//      val stmt = conn.createStatement
+//      val request = s"SELECT * " +
+//          s"FROM ${GarageTableDefinitions.tableName};"
+//      
+//      logger.debug(s"request : ${request}")
+//      val rs = stmt.executeQuery(request)
+//      
+//      while (rs.next()) {
+//        logger.debug(s"inserted Id result : ${rs.toString()}")
+//        val id = rs.getInt(s"${GarageTableDefinitions.columns.id}")
+//        val name = rs.getString(s"${GarageTableDefinitions.columns.name}")
+//        val address = rs.getString(s"${GarageTableDefinitions.columns.address}")
+//        val creationDate = rs.getDate(s"${GarageTableDefinitions.columns.creationDate}")
+//        val maxCarCapacity = rs.getInt(s"${GarageTableDefinitions.columns.maxCarCapacity}")
+//        val currentGarage = Garage(Some(id), name, address, creationDate, maxCarCapacity)
+//            
+//        currentGarage :: garages 
+//      }
+//    } catch { 
+//        case e: Exception => logger.error(s"An error occured on getGarages", e)
+//    } finally {
+//      conn.close()
+//    }
+//    garages
+//  }
   
   def getGarage(id: Int) = {
     var garage: Garage = null
