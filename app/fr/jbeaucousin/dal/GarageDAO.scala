@@ -31,6 +31,8 @@ class GarageDAO @Inject()(db: Database){
           logger.debug(s"inserted Id result : ${rs.toString()}")
           insertedId = rs.getInt(s"${GarageTableDefinitions.columns.id}")
         }
+      } catch { 
+        case e: Exception => logger.error(s"An error occured on addGarage", e)
       } finally {
         conn.close()
       }
@@ -61,6 +63,8 @@ class GarageDAO @Inject()(db: Database){
             
         currentGarage :: garages 
       }
+    } catch { 
+        case e: Exception => logger.error(s"An error occured on getGarages", e)
     } finally {
       conn.close()
     }
@@ -92,6 +96,8 @@ class GarageDAO @Inject()(db: Database){
           garage = Garage(Some(id), name, address, creationDate, maxCarCapacity)
               
         }
+      } catch { 
+        case e: Exception => logger.error(s"An error occured on getGarage", e)
       } finally {
         conn.close()
       }

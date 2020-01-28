@@ -43,9 +43,14 @@ class GarageController @Inject()(
         logger.debug(s"garage parsed : ${garage.toString()}")
         val insertedId = garageDAO.addGarage(garage)
         logger.debug(s"InsertedId, $insertedId")
-        Future.successful(Ok.withHeaders(
+        if(insertedId > -1) {
+          Future.successful(Ok.withHeaders(
             ControllerConstants.HeaderFields.location -> routes.GarageController.getGarage(insertedId).absoluteURL())
-        )  
+          )  
+        } else {
+          val error = JsonError(INTERNAL_SERVER_ERROR, "An error occured on insertion")
+          Future.successful(InternalServerError(Json.toJson(error)))
+        }          
       }
     }
   }
