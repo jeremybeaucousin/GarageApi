@@ -14,7 +14,7 @@ class GarageDAO @Inject()(db: Database){
   val logger: Logger = Logger(this.getClass())
   
   def addGarage(garage: Garage) = {
-    var insertedId: String = null
+    var insertedId: Int = -1
     val conn = db.getConnection()
 
     if(garage != null) {
@@ -23,18 +23,79 @@ class GarageDAO @Inject()(db: Database){
         val request = s"INSERT INTO ${GarageTableDefinitions.tableName}" + 
             s" (${GarageTableDefinitions.columns.name}, ${GarageTableDefinitions.columns.address}, ${GarageTableDefinitions.columns.creationDate}, ${GarageTableDefinitions.columns.maxCarCapacity}) " +
             s"VALUES('${garage.name}', '${garage.address}', '${garage.getDatabaseCreationDate}', ${garage.maxCarCapacity}) " +
-            "RETURNING id;"
+            s"RETURNING ${GarageTableDefinitions.columns.id};"
         logger.debug(s"request : ${request}")
         val rs   = stmt.executeQuery(request)
   
         while (rs.next()) {
           logger.debug(s"inserted Id result : ${rs.toString()}")
-          insertedId = rs.getString("id")
+          insertedId = rs.getInt(s"${GarageTableDefinitions.columns.id}")
         }
       } finally {
         conn.close()
       }
     }
     insertedId
+  }
+  
+  def getGarages = {
+    val garages = List[Garage]()
+    val conn = db.getConnection()
+
+    try {
+      val stmt = conn.createStatement
+      val request = s"SELECT * " +
+          s"FROM ${GarageTableDefinitions.tableName};"
+      
+      logger.debug(s"request : ${request}")
+      val rs = stmt.executeQuery(request)
+      
+      while (rs.next()) {
+        logger.debug(s"inserted Id result : ${rs.toString()}")
+        val id = rs.getInt(s"${GarageTableDefinitions.columns.id}")
+        val name = rs.getString(s"${GarageTableDefinitions.columns.name}")
+        val address = rs.getString(s"${GarageTableDefinitions.columns.address}")
+        val creationDate = rs.getDate(s"${GarageTableDefinitions.columns.creationDate}")
+        val maxCarCapacity = rs.getInt(s"${GarageTableDefinitions.columns.maxCarCapacity}")
+        val currentGarage = Garage(Some(id), name, address, creationDate, maxCarCapacity)
+            
+        currentGarage :: garages 
+      }
+    } finally {
+      conn.close()
+    }
+    garages
+  }
+  
+  def getGarage(id: Int) = {
+    var garage: Garage = null
+    val conn = db.getConnection()
+
+    if(id != null) {
+      try {
+        val stmt = conn.createStatement
+        val request = s"SELECT * " +
+            s"FROM ${GarageTableDefinitions.tableName} " + 
+            s"WHERE ${GarageTableDefinitions.tableName}.${GarageTableDefinitions.columns.id} =  ${id};"
+        
+        logger.debug(s"request : ${request}")
+        val rs = stmt.executeQuery(request)
+        
+        while (rs.next()) {
+          logger.debug(s"inserted Id result : ${rs.toString()}")
+          val id = rs.getInt(s"${GarageTableDefinitions.columns.id}")
+          val name = rs.getString(s"${GarageTableDefinitions.columns.name}")
+          val address = rs.getString(s"${GarageTableDefinitions.columns.address}")
+          val creationDate = rs.getDate(s"${GarageTableDefinitions.columns.creationDate}")
+          val maxCarCapacity = rs.getInt(s"${GarageTableDefinitions.columns.maxCarCapacity}")
+          
+          garage = Garage(Some(id), name, address, creationDate, maxCarCapacity)
+              
+        }
+      } finally {
+        conn.close()
+      }
+    }
+    garage
   }
 }

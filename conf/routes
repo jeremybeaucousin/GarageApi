@@ -3,5 +3,6 @@
 # https://www.playframework.com/documentation/latest/ScalaRouting
 # ~~~~
 
-# An example controller showing a sample home page
-POST     /garages						fr.jbeaucousin.controllers.GarageController.addGarage()
+# Garages routes
+POST     /garages						fr.jbeaucousin.controllers.GarageController.addGarage
+GET      /garages/:id					fr.jbeaucousin.controllers.GarageController.getGarage(id: Int)

@@ -21,7 +21,7 @@ object Garage {
       GarageJsonDefinitions.columns.id  -> garage.id,
       GarageJsonDefinitions.columns.name -> garage.name,
       GarageJsonDefinitions.columns.address -> garage.address,
-      GarageJsonDefinitions.columns.creationDate -> garage.creationDate,
+      GarageJsonDefinitions.columns.creationDate -> garage.getDatabaseCreationDate,
       GarageJsonDefinitions.columns.maxCarCapacity -> garage.maxCarCapacity
     )
   }

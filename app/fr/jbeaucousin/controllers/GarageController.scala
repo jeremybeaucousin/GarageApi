@@ -25,7 +25,7 @@ class GarageController @Inject()(
 
   val logger: Logger = Logger(this.getClass())
    
-  def addGarage() = action.async { implicit request: Request[AnyContent] =>
+  def addGarage = action.async { implicit request: Request[AnyContent] =>
     val jsonBody: Option[JsValue] = request.body.asJson
     val json = jsonBody.getOrElse(null)
     if(json == null) {
@@ -43,9 +43,21 @@ class GarageController @Inject()(
         logger.debug(s"garage parsed : ${garage.toString()}")
         val insertedId = garageDAO.addGarage(garage)
         logger.debug(s"InsertedId, $insertedId")
-        // routes.ToolBoxController.getToolBoxSheet(id).toString()
-        Future.successful(Ok.withHeaders(ControllerConstants.HeaderFields.location -> insertedId))  
+        Future.successful(Ok.withHeaders(
+            ControllerConstants.HeaderFields.location -> routes.GarageController.getGarage(insertedId).absoluteURL())
+        )  
       }
     }
+  }
+  
+  def getGarage(id: Int) = action.async { implicit request: Request[AnyContent] =>
+      logger.debug(s"id received : ${id.toString()}")
+      val garage = garageDAO.getGarage(id)
+      if(garage != null) {
+        logger.debug(s"garages found : ${garage.toString()}")
+        Future.successful(Ok(Json.toJson(garage)))
+      } else {
+        Future.successful(NotFound)
+      }
   }
 }
