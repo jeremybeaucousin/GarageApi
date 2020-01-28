@@ -15,5 +15,5 @@ CREATE TABLE public.car (
 	price varchar NOT NULL,
 	garage_id int4 NULL,
 	PRIMARY KEY (id),
-	CONSTRAINT car_fk FOREIGN KEY (garage_id) REFERENCES public.garage(id);
+	CONSTRAINT car_fk FOREIGN KEY (garage_id) REFERENCES public.garage(id) ON DELETE CASCADE;
 );
