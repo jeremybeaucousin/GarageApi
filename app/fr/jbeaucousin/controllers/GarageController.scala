@@ -5,11 +5,13 @@ import play.api._
 import play.api.mvc._
 import play.api.http.Status
 
-import play.api.libs.json.{ JsObject, JsValue, Json, Writes }
+import play.api.libs.json.{ JsObject, JsValue, Json, Writes, JsResult }
 
 import scala.concurrent.{ ExecutionContext, Future, Promise }
 
 import fr.jbeaucousin.model.{ JsonError }
+import fr.jbeaucousin.dal.GarageDAO
+import fr.jbeaucousin.model.Garage
 
 /**
  * This controller creates an `Action` to handle HTTP requests to the
@@ -18,6 +20,7 @@ import fr.jbeaucousin.model.{ JsonError }
 @Singleton
 class GarageController @Inject()(
     val controllerComponents: ControllerComponents,
+    val garageDAO: GarageDAO,
     val action: DefaultActionBuilder) extends BaseController {
 
   val logger: Logger = Logger(this.getClass())
@@ -29,8 +32,20 @@ class GarageController @Inject()(
       val error = JsonError(BAD_REQUEST, "No json body sent")
       Future.successful(BadRequest(Json.toJson(error)))
     } else {
-      logger.debug(json.toString())
-      Future.successful(Ok(""))  
+      logger.debug(s"json body receive : ${json.toString()}")
+      val garageResult: JsResult[Garage] = json.validate[Garage]
+      val garage =  garageResult.getOrElse(null);
+      if(garage == null) {
+        logger.debug(s"garage result : ${garageResult.toString()}")
+        val error = JsonError(BAD_REQUEST, "The body is not a valid garage")
+        Future.successful(BadRequest(Json.toJson(error)))  
+      } else {
+        logger.debug(s"garage parsed : ${garage.toString()}")
+        val insertedId = garageDAO.addGarage(garage)
+        logger.debug(s"InsertedId, $insertedId")
+        // routes.ToolBoxController.getToolBoxSheet(id).toString()
+        Future.successful(Ok.withHeaders(ControllerConstants.HeaderFields.location -> insertedId))  
+      }
     }
   }
 }
