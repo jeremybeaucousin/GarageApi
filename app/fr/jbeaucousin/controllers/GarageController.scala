@@ -3,11 +3,13 @@ package fr.jbeaucousin.controllers
 import javax.inject._
 import play.api._
 import play.api.mvc._
-import play.api.mvc.Results
+import play.api.http.Status
 
-import play.api.libs.json.{ JsObject, JsValue, Json }
+import play.api.libs.json.{ JsObject, JsValue, Json, Writes }
 
 import scala.concurrent.{ ExecutionContext, Future, Promise }
+
+import fr.jbeaucousin.model.{ JsonError }
 
 /**
  * This controller creates an `Action` to handle HTTP requests to the
@@ -24,7 +26,8 @@ class GarageController @Inject()(
     val jsonBody: Option[JsValue] = request.body.asJson
     val json = jsonBody.getOrElse(null)
     if(json == null) {
-      Future.successful(BadRequest(""))
+      val error = JsonError(BAD_REQUEST, "No json body sent")
+      Future.successful(BadRequest(Json.toJson(error)))
     } else {
       logger.debug(json.toString())
       Future.successful(Ok(""))  
