@@ -72,6 +72,18 @@ class CarController @Inject()(
     }
   }
   
+  def getCars(garageId: Int) = action.async { implicit request: Request[AnyContent] =>
+    logger.debug(s"GarageID received : ${garageId.toString()}")
+    def carProcessing(garage: Garage) = {
+      val cars = carDAO.getCars(Some(garageId))
+      logger.debug(s"cars found : ${cars.toString()}")
+      Future.successful(Ok(Json.toJson(cars)))
+    }
+
+    // Check if garage exists
+    checkGarageId(garageId, carProcessing)
+  }
+    
   def getCar(garageId: Int, carId: Int) = action.async { implicit request: Request[AnyContent] =>
     logger.debug(s"GarageID received : ${garageId.toString()}; CarID received : ${carId.toString()}")
     val car = carDAO.getCar(garageId, carId)
