@@ -7,7 +7,7 @@ import java.util.Date
 import java.text.{ SimpleDateFormat, DateFormat }
 import fr.jbeaucousin.dal.definitions.CarJsonDefinitions
 
-case class Car(id: Option[Int], licenceId: String, brand: String, model: String, price: Double, var garageId: Option[Int]) 
+case class Car(var id: Option[Int], licenceId: String, brand: String, model: String, price: Double, var garageId: Option[Int]) 
 
 object Car {
   implicit val carWrites = new Writes[Car] {

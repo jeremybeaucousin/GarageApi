@@ -22,8 +22,8 @@ class GarageDAO @Inject()(
 
     if(garage != null) {
       def requestProcessing(stmt: Statement) = {
-        val request = s"INSERT INTO ${GarageTableDefinitions.tableName}" + 
-            s" (${GarageTableDefinitions.columns.name}, ${GarageTableDefinitions.columns.address}, ${GarageTableDefinitions.columns.creationDate}, ${GarageTableDefinitions.columns.maxCarCapacity}) " +
+        val request = s"INSERT INTO ${GarageTableDefinitions.tableName} " + 
+            s"(${GarageTableDefinitions.columns.name}, ${GarageTableDefinitions.columns.address}, ${GarageTableDefinitions.columns.creationDate}, ${GarageTableDefinitions.columns.maxCarCapacity}) " +
             s"VALUES('${garage.name}', '${garage.address}', '${garage.getDatabaseCreationDate}', ${garage.maxCarCapacity}) " +
             s"RETURNING ${GarageTableDefinitions.columns.id};"
         logger.debug(s"request : ${request}")

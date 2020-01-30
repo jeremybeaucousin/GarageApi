@@ -22,8 +22,8 @@ class CarDAO @Inject()(db: Database){
 
     if(car != null) {
       def requestProcessing(stmt: Statement) = {
-        val request = s"INSERT INTO ${CarTableDefinitions.tableName}" + 
-            s" (${CarTableDefinitions.columns.licenceId}, ${CarTableDefinitions.columns.brand}, ${CarTableDefinitions.columns.model}, ${CarTableDefinitions.columns.price}, ${CarTableDefinitions.columns.garageId}) " +
+        val request = s"INSERT INTO ${CarTableDefinitions.tableName} " + 
+            s"(${CarTableDefinitions.columns.licenceId}, ${CarTableDefinitions.columns.brand}, ${CarTableDefinitions.columns.model}, ${CarTableDefinitions.columns.price}, ${CarTableDefinitions.columns.garageId}) " +
             s"VALUES('${car.licenceId}', '${car.brand}', '${car.model}', ${car.price}, ${car.garageId.getOrElse(null)}) " +
             s"RETURNING ${CarTableDefinitions.columns.id};"
         logger.debug(s"request : ${request}")
@@ -31,6 +31,31 @@ class CarDAO @Inject()(db: Database){
   
         while (rs.next()) {
           logger.debug(s"inserted Id result : ${rs.toString()}")
+          insertedId = rs.getInt(s"${CarTableDefinitions.columns.id}")
+        }
+      }
+      DAOUtils.handleConnection(db, requestProcessing)
+    }
+    insertedId
+  }
+  
+  def updateCar(car: Car) = {
+    var insertedId: Int = -1
+
+    if(car != null) {
+      def requestProcessing(stmt: Statement) = {
+        val request = s"UPDATE ${CarTableDefinitions.tableName} " + 
+            s"SET ${CarTableDefinitions.columns.licenceId} = '${car.licenceId}', ${CarTableDefinitions.columns.brand} = '${car.brand}', " +
+            s"${CarTableDefinitions.columns.model} = '${car.model}', ${CarTableDefinitions.columns.price} = ${car.price} " +
+            s"WHERE ${CarTableDefinitions.tableName}.${CarTableDefinitions.columns.garageId} = ${car.garageId.getOrElse(null)} " +
+            s"AND ${CarTableDefinitions.tableName}.${CarTableDefinitions.columns.id} = ${car.id.getOrElse(null)} " +
+            s"RETURNING ${CarTableDefinitions.columns.id};"
+            
+        logger.debug(s"request : ${request}")
+        val rs   = stmt.executeQuery(request)
+  
+        while (rs.next()) {
+          logger.debug(s"updated Id result : ${rs.toString()}")
           insertedId = rs.getInt(s"${CarTableDefinitions.columns.id}")
         }
       }

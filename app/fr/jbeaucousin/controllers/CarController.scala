@@ -134,7 +134,43 @@ class CarController @Inject()(
     
   def updateCar(garageId: Int, carId: Int) = action.async { implicit request: Request[AnyContent] =>
     def callProcessing() = {
-      Future.successful(Ok)
+      def carProcessing(garage: Garage) = {
+        val jsonBody: Option[JsValue] = request.body.asJson
+        if(jsonBody.isEmpty) {
+          val error = JsonError(BAD_REQUEST, "No json body sent", None)
+          Future.successful(BadRequest(Json.toJson(error)))
+        } else {
+          val json = jsonBody.get
+          logger.debug(s"json body receive : ${json.toString()}")
+          val carResult: JsResult[Car] = json.validate[Car]
+          if(carResult.isError) {
+            logger.debug(s"car result : ${carResult.toString()}")
+            val error = JsonError(BAD_REQUEST, "The body is not a valid car", None)
+            Future.successful(BadRequest(Json.toJson(error)))  
+          } else {
+            val car =  carResult.get
+            logger.debug(s"car parsed : ${car.toString()}")
+            def carProcessing(garage: Garage) = {
+              // Use path ids only
+              // Can be crossed with the one in the body for verificatio
+              car.garageId = Some(garageId)
+              car.id = Some(carId)
+              val updatedId = carDAO.updateCar(car)
+              logger.debug(s"updatedId, $updatedId")
+              if(updatedId > -1) {
+                Future.successful(Ok)
+              } else {
+                val error = JsonError(NOT_FOUND, s"Car identifier ${carId} not found", None)
+                Future.successful(NotFound(Json.toJson(error)))
+              }       
+            }
+            // Check if garage exists
+            checkGarageId(garageId, carProcessing)
+          }
+        }
+      }
+      // Check if garage exists
+      checkGarageId(garageId, carProcessing)
     }
     ControllerUtils.handleException(callProcessing)
   }

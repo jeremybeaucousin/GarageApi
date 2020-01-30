@@ -7,7 +7,7 @@ import java.util.Date
 import java.text.{ SimpleDateFormat, DateFormat }
 import fr.jbeaucousin.dal.definitions.GarageJsonDefinitions
 
-case class Garage(id: Option[Int], name: String, address: String, creationDate: Date, maxCarCapacity: Int) {
+case class Garage(var id: Option[Int], name: String, address: String, creationDate: Date, maxCarCapacity: Int) {
   
   def getDatabaseCreationDate = {
     val formatter: DateFormat = new SimpleDateFormat("yyyy-MM-dd");
