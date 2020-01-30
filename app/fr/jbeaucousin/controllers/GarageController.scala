@@ -27,19 +27,19 @@ class GarageController @Inject()(
    
   def addGarage = action.async { implicit request: Request[AnyContent] =>
     val jsonBody: Option[JsValue] = request.body.asJson
-    val json = jsonBody.getOrElse(null)
-    if(json == null) {
+    if(jsonBody.isEmpty) {
       val error = JsonError(BAD_REQUEST, "No json body sent")
       Future.successful(BadRequest(Json.toJson(error)))
     } else {
+      val json = jsonBody.get
       logger.debug(s"json body receive : ${json.toString()}")
       val garageResult: JsResult[Garage] = json.validate[Garage]
-      val garage =  garageResult.getOrElse(null);
-      if(garage == null) {
+      if(garageResult.isError) {
         logger.debug(s"garage result : ${garageResult.toString()}")
         val error = JsonError(BAD_REQUEST, "The body is not a valid garage")
         Future.successful(BadRequest(Json.toJson(error)))  
       } else {
+        val garage =  garageResult.get
         logger.debug(s"garage parsed : ${garage.toString()}")
         val insertedId = garageDAO.addGarage(garage)
         logger.debug(s"InsertedId, $insertedId")

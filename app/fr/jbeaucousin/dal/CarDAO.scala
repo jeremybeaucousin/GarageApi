@@ -5,9 +5,11 @@ import javax.inject.{Inject, Singleton }
 import play.api.Logger
 import play.api.db._
 
+import scala.collection.mutable.ListBuffer
+import java.sql.ResultSet
+
 import fr.jbeaucousin.model.Car
 import fr.jbeaucousin.dal.definitions.{ CarTableDefinitions, GarageTableDefinitions }
-import scala.collection.mutable.ListBuffer
 
 @Singleton
 class CarDAO @Inject()(db: Database){
@@ -59,15 +61,7 @@ class CarDAO @Inject()(db: Database){
       val rs = stmt.executeQuery(request)
       
       while (rs.next()) {
-        val id = rs.getInt(s"${CarTableDefinitions.columns.id}")
-        val licenceId = rs.getString(s"${CarTableDefinitions.columns.licenceId}")
-        val brand = rs.getString(s"${CarTableDefinitions.columns.brand}")
-        val model = rs.getString(s"${CarTableDefinitions.columns.model}")
-        val price = rs.getDouble(s"${CarTableDefinitions.columns.price}")
-        val garageId = rs.getInt(s"${CarTableDefinitions.columns.garageId}")
-        
-        val currentCar = Car(Some(id), licenceId, brand, model, price, Some(garageId))
-        
+        val currentCar = extractCar(rs)
         cars += currentCar
       }
     } catch { 
@@ -78,39 +72,43 @@ class CarDAO @Inject()(db: Database){
     cars
   }
   
-//  def getGarage(id: Int) = {
-//    var garage: Garage = null
-//    val conn = db.getConnection()
-//
-//    if(id != null) {
-//      try {
-//        val stmt = conn.createStatement
-//        val request = s"SELECT * " +
-//            s"FROM ${GarageTableDefinitions.tableName} " + 
-//            s"WHERE ${GarageTableDefinitions.tableName}.${GarageTableDefinitions.columns.id} =  ${id};"
-//        
-//        logger.debug(s"request : ${request}")
-//        val rs = stmt.executeQuery(request)
-//        
-//        while (rs.next()) {
-//          logger.debug(s"inserted Id result : ${rs.toString()}")
-//          val id = rs.getInt(s"${GarageTableDefinitions.columns.id}")
-//          val name = rs.getString(s"${GarageTableDefinitions.columns.name}")
-//          val address = rs.getString(s"${GarageTableDefinitions.columns.address}")
-//          val creationDate = rs.getDate(s"${GarageTableDefinitions.columns.creationDate}")
-//          val maxCarCapacity = rs.getInt(s"${GarageTableDefinitions.columns.maxCarCapacity}")
-//          
-//          garage = Garage(Some(id), name, address, creationDate, maxCarCapacity)
-//              
-//        }
-//      } catch { 
-//        case e: Exception => logger.error(s"An error occured on getGarage", e)
-//      } finally {
-//        conn.close()
-//      }
-//    }
-//    garage
-//  }
+  def getCar(garageId: Int, carId: Int) = {
+    var car: Car = null
+    val conn = db.getConnection()
+
+    if(garageId != null && carId != null) {
+      try {
+        val stmt = conn.createStatement
+        val request = s"SELECT * " +
+            s"FROM ${CarTableDefinitions.tableName} " + 
+            s"WHERE ${CarTableDefinitions.tableName}.${CarTableDefinitions.columns.id} =  ${carId} " +
+            s"AND ${CarTableDefinitions.tableName}.${CarTableDefinitions.columns.garageId} =  ${garageId};"
+        
+        logger.debug(s"request : ${request}")
+        val rs = stmt.executeQuery(request)
+        
+        while (rs.next()) {
+          car = extractCar(rs)
+        }
+      } catch { 
+        case e: Exception => logger.error(s"An error occured on getGarage", e)
+      } finally {
+        conn.close()
+      }
+    }
+    car
+  }
+  
+  private def extractCar(rs: ResultSet) = {
+    val id = rs.getInt(s"${CarTableDefinitions.columns.id}")
+    val licenceId = rs.getString(s"${CarTableDefinitions.columns.licenceId}")
+    val brand = rs.getString(s"${CarTableDefinitions.columns.brand}")
+    val model = rs.getString(s"${CarTableDefinitions.columns.model}")
+    val price = rs.getDouble(s"${CarTableDefinitions.columns.price}")
+    val garageId = rs.getInt(s"${CarTableDefinitions.columns.garageId}")
+    
+    Car(Some(id), licenceId, brand, model, price, Some(garageId))
+  }
 //  
 //  def deleteGarage(id: Int) = {
 //    var deletedId: Int = -1

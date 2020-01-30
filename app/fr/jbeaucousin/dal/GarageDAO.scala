@@ -5,11 +5,14 @@ import javax.inject.{Inject, Singleton }
 import play.api.Logger
 import play.api.db._
 
+import java.sql.ResultSet
+
 import fr.jbeaucousin.model.Garage
 import fr.jbeaucousin.dal.definitions.GarageTableDefinitions
 
 @Singleton
-class GarageDAO @Inject()(db: Database){
+class GarageDAO @Inject()(
+    db: Database) {
   
   val logger: Logger = Logger(this.getClass())
   
@@ -40,37 +43,6 @@ class GarageDAO @Inject()(db: Database){
     insertedId
   }
   
-//  def getGarages = {
-//    val garages = List[Garage]()
-//    val conn = db.getConnection()
-//
-//    try {
-//      val stmt = conn.createStatement
-//      val request = s"SELECT * " +
-//          s"FROM ${GarageTableDefinitions.tableName};"
-//      
-//      logger.debug(s"request : ${request}")
-//      val rs = stmt.executeQuery(request)
-//      
-//      while (rs.next()) {
-//        logger.debug(s"inserted Id result : ${rs.toString()}")
-//        val id = rs.getInt(s"${GarageTableDefinitions.columns.id}")
-//        val name = rs.getString(s"${GarageTableDefinitions.columns.name}")
-//        val address = rs.getString(s"${GarageTableDefinitions.columns.address}")
-//        val creationDate = rs.getDate(s"${GarageTableDefinitions.columns.creationDate}")
-//        val maxCarCapacity = rs.getInt(s"${GarageTableDefinitions.columns.maxCarCapacity}")
-//        val currentGarage = Garage(Some(id), name, address, creationDate, maxCarCapacity)
-//            
-//        currentGarage :: garages 
-//      }
-//    } catch { 
-//        case e: Exception => logger.error(s"An error occured on getGarages", e)
-//    } finally {
-//      conn.close()
-//    }
-//    garages
-//  }
-  
   def getGarage(id: Int) = {
     var garage: Garage = null
     val conn = db.getConnection()
@@ -86,15 +58,7 @@ class GarageDAO @Inject()(db: Database){
         val rs = stmt.executeQuery(request)
         
         while (rs.next()) {
-          logger.debug(s"inserted Id result : ${rs.toString()}")
-          val id = rs.getInt(s"${GarageTableDefinitions.columns.id}")
-          val name = rs.getString(s"${GarageTableDefinitions.columns.name}")
-          val address = rs.getString(s"${GarageTableDefinitions.columns.address}")
-          val creationDate = rs.getDate(s"${GarageTableDefinitions.columns.creationDate}")
-          val maxCarCapacity = rs.getInt(s"${GarageTableDefinitions.columns.maxCarCapacity}")
-          
-          garage = Garage(Some(id), name, address, creationDate, maxCarCapacity)
-              
+          garage = extractGarage(rs)
         }
       } catch { 
         case e: Exception => logger.error(s"An error occured on getGarage", e)
@@ -131,5 +95,15 @@ class GarageDAO @Inject()(db: Database){
       }
     }
     deletedId
+  }
+  
+  private def extractGarage(rs: ResultSet) = {
+    val id = rs.getInt(s"${GarageTableDefinitions.columns.id}")
+    val name = rs.getString(s"${GarageTableDefinitions.columns.name}")
+    val address = rs.getString(s"${GarageTableDefinitions.columns.address}")
+    val creationDate = rs.getDate(s"${GarageTableDefinitions.columns.creationDate}")
+    val maxCarCapacity = rs.getInt(s"${GarageTableDefinitions.columns.maxCarCapacity}")
+          
+    Garage(Some(id), name, address, creationDate, maxCarCapacity)
   }
 }
