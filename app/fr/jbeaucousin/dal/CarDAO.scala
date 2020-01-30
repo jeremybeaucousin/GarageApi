@@ -95,7 +95,7 @@ class CarDAO @Inject()(db: Database){
             s"WHERE ${CarTableDefinitions.tableName}.${CarTableDefinitions.columns.garageId} =  ${garageId} "
         
         if(carId.isDefined) {
-          request = request.concat(s"AND ${CarTableDefinitions.tableName}.${CarTableDefinitions.columns.id} =  ${carId} ")
+          request = request.concat(s"AND ${CarTableDefinitions.tableName}.${CarTableDefinitions.columns.id} =  ${carId.get} ")
         }
         request = request.concat(s"RETURNING ${CarTableDefinitions.columns.id};")
       

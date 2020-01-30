@@ -26,36 +26,40 @@ class GarageController @Inject()(
   val logger: Logger = Logger(this.getClass())
    
   def addGarage = action.async { implicit request: Request[AnyContent] =>
-    val jsonBody: Option[JsValue] = request.body.asJson
-    if(jsonBody.isEmpty) {
-      val error = JsonError(BAD_REQUEST, "No json body sent")
-      Future.successful(BadRequest(Json.toJson(error)))
-    } else {
-      val json = jsonBody.get
-      logger.debug(s"json body receive : ${json.toString()}")
-      val garageResult: JsResult[Garage] = json.validate[Garage]
-      if(garageResult.isError) {
-        logger.debug(s"garage result : ${garageResult.toString()}")
-        val error = JsonError(BAD_REQUEST, "The body is not a valid garage")
-        Future.successful(BadRequest(Json.toJson(error)))  
+    def callProcessing() = {
+      val jsonBody: Option[JsValue] = request.body.asJson
+      if(jsonBody.isEmpty) {
+        val error = JsonError(BAD_REQUEST, "No json body sent", None)
+        Future.successful(BadRequest(Json.toJson(error)))
       } else {
-        val garage =  garageResult.get
-        logger.debug(s"garage parsed : ${garage.toString()}")
-        val insertedId = garageDAO.addGarage(garage)
-        logger.debug(s"InsertedId, $insertedId")
-        if(insertedId > -1) {
-          Future.successful(Created.withHeaders(
-            ControllerConstants.HeaderFields.location -> routes.GarageController.getGarage(insertedId).absoluteURL())
-          )  
+        val json = jsonBody.get
+        logger.debug(s"json body receive : ${json.toString()}")
+        val garageResult: JsResult[Garage] = json.validate[Garage]
+        if(garageResult.isError) {
+          logger.debug(s"garage result : ${garageResult.toString()}")
+          val error = JsonError(BAD_REQUEST, "The body is not a valid garage", None)
+          Future.successful(BadRequest(Json.toJson(error)))  
         } else {
-          val error = JsonError(INTERNAL_SERVER_ERROR, "An error occured on insertion")
-          Future.successful(InternalServerError(Json.toJson(error)))
-        }          
+          val garage =  garageResult.get
+          logger.debug(s"garage parsed : ${garage.toString()}")
+          val insertedId = garageDAO.addGarage(garage)
+          logger.debug(s"InsertedId, $insertedId")
+          if(insertedId > -1) {
+            Future.successful(Created.withHeaders(
+              ControllerConstants.HeaderFields.location -> routes.GarageController.getGarage(insertedId).absoluteURL())
+            )  
+          } else {
+            val error = JsonError(INTERNAL_SERVER_ERROR, "An error occured on insertion", None)
+            Future.successful(InternalServerError(Json.toJson(error)))
+          }          
+        }
       }
     }
+    ControllerUtils.handleException(callProcessing)
   }
   
   def getGarage(id: Int) = action.async { implicit request: Request[AnyContent] =>
+    def callProcessing() = {
       logger.debug(s"id received : ${id.toString()}")
       val garage = garageDAO.getGarage(id)
       if(garage != null) {
@@ -64,9 +68,12 @@ class GarageController @Inject()(
       } else {
         Future.successful(NotFound)
       }
+    }
+    ControllerUtils.handleException(callProcessing)
   }
   
   def deleteGarage(id: Int) = action.async { implicit request: Request[AnyContent] =>
+    def callProcessing() = {
       logger.debug(s"id received : ${id.toString()}")
       val deletedId = garageDAO.deleteGarage(id)
       logger.debug(s"deletedId : , $deletedId")
@@ -75,5 +82,7 @@ class GarageController @Inject()(
       } else {
         Future.successful(NotFound)
       }
+    }
+    ControllerUtils.handleException(callProcessing)
   }
 }
