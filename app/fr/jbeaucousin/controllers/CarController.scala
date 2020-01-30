@@ -53,12 +53,11 @@ class CarController @Inject()(
             // Use path id only
             // Can be crossed with the one in the body for verification
             car.garageId = Some(garageId)
-            val insertedId = carDAO.addGarage(car)
+            val insertedId = carDAO.addCar(car)
             logger.debug(s"InsertedId, $insertedId")
             if(insertedId > -1) {
-              // ControllerConstants.HeaderFields.location -> routes.CarController.getGarage(insertedId).absoluteURL())
               Future.successful(Created.withHeaders(
-                ControllerConstants.HeaderFields.location -> insertedId.toString())
+                ControllerConstants.HeaderFields.location -> routes.CarController.getCar(garageId, insertedId).absoluteURL())
               )  
             } else {
               val error = JsonError(INTERNAL_SERVER_ERROR, "An error occured on insertion")
@@ -90,6 +89,28 @@ class CarController @Inject()(
     if(car != null) {
       logger.debug(s"car found : ${car.toString()}")
       Future.successful(Ok(Json.toJson(car)))
+    } else {
+      Future.successful(NotFound)
+    }
+  }
+  
+  def deleteCars(garageId: Int) = action.async { implicit request: Request[AnyContent] =>
+    logger.debug(s"GarageID received : ${garageId.toString()}")
+    val deletedIds = carDAO.deleteCars(garageId, None)
+    logger.debug(s"deletedIds : , $deletedIds")
+    if(!deletedIds.isEmpty) {
+      Future.successful(Ok)
+    } else {
+      Future.successful(NotFound)
+    }
+  }
+  
+  def deleteCar(garageId: Int, carId: Int) = action.async { implicit request: Request[AnyContent] =>
+    logger.debug(s"GarageID received : ${garageId.toString()}; CarID received : ${carId.toString()}")
+    val deletedIds = carDAO.deleteCars(garageId, Some(carId))
+    logger.debug(s"deletedIds : , $deletedIds")
+    if(!deletedIds.isEmpty) {
+      Future.successful(Ok)
     } else {
       Future.successful(NotFound)
     }

@@ -6,6 +6,7 @@ import play.api.Logger
 import play.api.db._
 
 import java.sql.ResultSet
+import java.sql.Statement
 
 import fr.jbeaucousin.model.Garage
 import fr.jbeaucousin.dal.definitions.GarageTableDefinitions
@@ -18,11 +19,9 @@ class GarageDAO @Inject()(
   
   def addGarage(garage: Garage) = {
     var insertedId: Int = -1
-    val conn = db.getConnection()
 
     if(garage != null) {
-      try {
-        val stmt = conn.createStatement
+      def requestProcessing(stmt: Statement) = {
         val request = s"INSERT INTO ${GarageTableDefinitions.tableName}" + 
             s" (${GarageTableDefinitions.columns.name}, ${GarageTableDefinitions.columns.address}, ${GarageTableDefinitions.columns.creationDate}, ${GarageTableDefinitions.columns.maxCarCapacity}) " +
             s"VALUES('${garage.name}', '${garage.address}', '${garage.getDatabaseCreationDate}', ${garage.maxCarCapacity}) " +
@@ -34,22 +33,17 @@ class GarageDAO @Inject()(
           logger.debug(s"inserted Id result : ${rs.toString()}")
           insertedId = rs.getInt(s"${GarageTableDefinitions.columns.id}")
         }
-      } catch { 
-        case e: Exception => logger.error(s"An error occured on addGarage", e)
-      } finally {
-        conn.close()
-      }
+      } 
+      DAOUtils.handleConnection(db, requestProcessing)
     }
     insertedId
   }
   
   def getGarage(id: Int) = {
     var garage: Garage = null
-    val conn = db.getConnection()
 
     if(id != null) {
-      try {
-        val stmt = conn.createStatement
+      def requestProcessing(stmt: Statement) = {
         val request = s"SELECT * " +
             s"FROM ${GarageTableDefinitions.tableName} " + 
             s"WHERE ${GarageTableDefinitions.tableName}.${GarageTableDefinitions.columns.id} =  ${id};"
@@ -60,22 +54,17 @@ class GarageDAO @Inject()(
         while (rs.next()) {
           garage = extractGarage(rs)
         }
-      } catch { 
-        case e: Exception => logger.error(s"An error occured on getGarage", e)
-      } finally {
-        conn.close()
       }
+      DAOUtils.handleConnection(db, requestProcessing)
     }
     garage
   }
   
   def deleteGarage(id: Int) = {
     var deletedId: Int = -1
-    val conn = db.getConnection()
 
     if(id != null) {
-      try {
-        val stmt = conn.createStatement
+      def requestProcessing(stmt: Statement) = {
         val request = s"DELETE " +
             s"FROM ${GarageTableDefinitions.tableName} " + 
             s"WHERE ${GarageTableDefinitions.tableName}.${GarageTableDefinitions.columns.id} =  ${id} " +
@@ -88,11 +77,8 @@ class GarageDAO @Inject()(
           logger.debug(s"deleted Id result : ${rs.toString()}")
           deletedId = rs.getInt(GarageTableDefinitions.columns.id)
         }
-      } catch { 
-        case e: Exception => logger.error(s"An error occured on getGarage", e)
-      } finally {
-        conn.close()
       }
+      DAOUtils.handleConnection(db, requestProcessing)
     }
     deletedId
   }

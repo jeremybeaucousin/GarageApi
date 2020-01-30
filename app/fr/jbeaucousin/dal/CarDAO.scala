@@ -10,19 +10,18 @@ import java.sql.ResultSet
 
 import fr.jbeaucousin.model.Car
 import fr.jbeaucousin.dal.definitions.{ CarTableDefinitions, GarageTableDefinitions }
+import java.sql.Statement
 
 @Singleton
 class CarDAO @Inject()(db: Database){
   
   val logger: Logger = Logger(this.getClass())
   
-  def addGarage(car: Car) = {
+  def addCar(car: Car) = {
     var insertedId: Int = -1
-    val conn = db.getConnection()
 
     if(car != null) {
-      try {
-        val stmt = conn.createStatement
+      def requestProcessing(stmt: Statement) = {
         val request = s"INSERT INTO ${CarTableDefinitions.tableName}" + 
             s" (${CarTableDefinitions.columns.licenceId}, ${CarTableDefinitions.columns.brand}, ${CarTableDefinitions.columns.model}, ${CarTableDefinitions.columns.price}, ${CarTableDefinitions.columns.garageId}) " +
             s"VALUES('${car.licenceId}', '${car.brand}', '${car.model}', ${car.price}, ${car.garageId.getOrElse(null)}) " +
@@ -34,21 +33,16 @@ class CarDAO @Inject()(db: Database){
           logger.debug(s"inserted Id result : ${rs.toString()}")
           insertedId = rs.getInt(s"${CarTableDefinitions.columns.id}")
         }
-      } catch { 
-        case e: Exception => logger.error(s"An error occured on addGarage", e)
-      } finally {
-        conn.close()
       }
+      DAOUtils.handleConnection(db, requestProcessing)
     }
     insertedId
   }
 
   def getCars(garageId: Option[Int]) = {
     val cars = new ListBuffer[Car]()
-    val conn = db.getConnection()
 
-    try {
-      val stmt = conn.createStatement
+    def requestProcessing(stmt: Statement) = {
       var request = s"SELECT * " +
           s"FROM ${CarTableDefinitions.tableName} "
       
@@ -64,21 +58,16 @@ class CarDAO @Inject()(db: Database){
         val currentCar = extractCar(rs)
         cars += currentCar
       }
-    } catch { 
-        case e: Exception => logger.error(s"An error occured on getCars", e)
-    } finally {
-      conn.close()
     }
+    DAOUtils.handleConnection(db, requestProcessing)
     cars
   }
   
   def getCar(garageId: Int, carId: Int) = {
     var car: Car = null
-    val conn = db.getConnection()
 
     if(garageId != null && carId != null) {
-      try {
-        val stmt = conn.createStatement
+      def requestProcessing(stmt: Statement) = {
         val request = s"SELECT * " +
             s"FROM ${CarTableDefinitions.tableName} " + 
             s"WHERE ${CarTableDefinitions.tableName}.${CarTableDefinitions.columns.id} =  ${carId} " +
@@ -90,13 +79,38 @@ class CarDAO @Inject()(db: Database){
         while (rs.next()) {
           car = extractCar(rs)
         }
-      } catch { 
-        case e: Exception => logger.error(s"An error occured on getGarage", e)
-      } finally {
-        conn.close()
       }
+      DAOUtils.handleConnection(db, requestProcessing)
     }
     car
+  }
+  
+  def deleteCars(garageId: Int, carId: Option[Int]) = {
+    var deletedIds = new ListBuffer[Int]()
+
+    if(garageId != null && carId != null) {
+      def requestProcessing(stmt: Statement) = {
+        var request = s"DELETE " +
+            s"FROM ${CarTableDefinitions.tableName} " + 
+            s"WHERE ${CarTableDefinitions.tableName}.${CarTableDefinitions.columns.garageId} =  ${garageId} "
+        
+        if(carId.isDefined) {
+          request = request.concat(s"AND ${CarTableDefinitions.tableName}.${CarTableDefinitions.columns.id} =  ${carId} ")
+        }
+        request = request.concat(s"RETURNING ${CarTableDefinitions.columns.id};")
+      
+        logger.debug(s"request : ${request}")
+        val rs = stmt.executeQuery(request)
+        
+        while (rs.next()) {
+          logger.debug(s"deleted Id result : ${rs.toString()}")
+          deletedIds += rs.getInt(GarageTableDefinitions.columns.id)
+        }
+      }
+      
+      DAOUtils.handleConnection(db, requestProcessing)
+    }
+    deletedIds
   }
   
   private def extractCar(rs: ResultSet) = {
@@ -109,32 +123,4 @@ class CarDAO @Inject()(db: Database){
     
     Car(Some(id), licenceId, brand, model, price, Some(garageId))
   }
-//  
-//  def deleteGarage(id: Int) = {
-//    var deletedId: Int = -1
-//    val conn = db.getConnection()
-//
-//    if(id != null) {
-//      try {
-//        val stmt = conn.createStatement
-//        val request = s"DELETE " +
-//            s"FROM ${GarageTableDefinitions.tableName} " + 
-//            s"WHERE ${GarageTableDefinitions.tableName}.${GarageTableDefinitions.columns.id} =  ${id} " +
-//            s"RETURNING ${GarageTableDefinitions.columns.id};"
-//        
-//        logger.debug(s"request : ${request}")
-//        val rs = stmt.executeQuery(request)
-//        
-//        while (rs.next()) {
-//          logger.debug(s"deleted Id result : ${rs.toString()}")
-//          deletedId = rs.getInt(GarageTableDefinitions.columns.id)
-//        }
-//      } catch { 
-//        case e: Exception => logger.error(s"An error occured on getGarage", e)
-//      } finally {
-//        conn.close()
-//      }
-//    }
-//    deletedId
-//  }
 }

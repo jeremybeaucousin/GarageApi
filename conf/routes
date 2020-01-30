@@ -13,3 +13,5 @@ POST   	/garages/:garageId/cars				fr.jbeaucousin.controllers.CarController.addC
 GET 	/garages/:garageId/cars				fr.jbeaucousin.controllers.CarController.getCars(garageId: Int)
 GET 	/garages/:garageId/cars/:carId		fr.jbeaucousin.controllers.CarController.getCar(garageId: Int, carId: Int)
 PUT   	/garages/:garageId/cars/:carId		fr.jbeaucousin.controllers.CarController.updateCar(garageId: Int, carId: Int)
+DELETE 	/garages/:garageId/cars				fr.jbeaucousin.controllers.CarController.deleteCars(garageId: Int)
+DELETE 	/garages/:garageId/cars/:carId		fr.jbeaucousin.controllers.CarController.deleteCar(garageId: Int, carId: Int)
