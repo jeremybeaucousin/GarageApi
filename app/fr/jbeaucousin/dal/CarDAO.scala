@@ -7,6 +7,7 @@ import play.api.db._
 
 import fr.jbeaucousin.model.Car
 import fr.jbeaucousin.dal.definitions.{ CarTableDefinitions, GarageTableDefinitions }
+import scala.collection.mutable.ListBuffer
 
 @Singleton
 class CarDAO @Inject()(db: Database){
@@ -22,7 +23,7 @@ class CarDAO @Inject()(db: Database){
         val stmt = conn.createStatement
         val request = s"INSERT INTO ${CarTableDefinitions.tableName}" + 
             s" (${CarTableDefinitions.columns.licenceId}, ${CarTableDefinitions.columns.brand}, ${CarTableDefinitions.columns.model}, ${CarTableDefinitions.columns.price}, ${CarTableDefinitions.columns.garageId}) " +
-            s"VALUES('${car.licenceId}', '${car.brand}', '${car.model}', ${car.price}, ${car.garageId}) " +
+            s"VALUES('${car.licenceId}', '${car.brand}', '${car.model}', ${car.price}, ${car.garageId.getOrElse(null)}) " +
             s"RETURNING ${CarTableDefinitions.columns.id};"
         logger.debug(s"request : ${request}")
         val rs   = stmt.executeQuery(request)
@@ -40,26 +41,24 @@ class CarDAO @Inject()(db: Database){
     insertedId
   }
 
-  def getCars(garageId: Int) = {
-    val cars = List[Garage]()
+  def getCars(garageId: Option[Int]) = {
+    val cars = new ListBuffer[Car]()
     val conn = db.getConnection()
 
     try {
       val stmt = conn.createStatement
-      val request = s"SELECT * " +
-          s"FROM ${CarTableDefinitions.tableName}"
+      var request = s"SELECT * " +
+          s"FROM ${CarTableDefinitions.tableName} "
       
-      if(garageId) {
-        request += s"WHERE ${CarTableDefinitions.tableName} = '${garageId}'"
+      if(garageId.isDefined) {
+        request = request.concat(s"WHERE ${CarTableDefinitions.tableName}.${CarTableDefinitions.columns.garageId} = '${garageId.get}'")
       }
-      
-      request += ";"
+      request = request.concat(";")
       
       logger.debug(s"request : ${request}")
       val rs = stmt.executeQuery(request)
       
       while (rs.next()) {
-        logger.debug(s"result : ${rs.toString()}")
         val id = rs.getInt(s"${CarTableDefinitions.columns.id}")
         val licenceId = rs.getString(s"${CarTableDefinitions.columns.licenceId}")
         val brand = rs.getString(s"${CarTableDefinitions.columns.brand}")
@@ -67,9 +66,9 @@ class CarDAO @Inject()(db: Database){
         val price = rs.getDouble(s"${CarTableDefinitions.columns.price}")
         val garageId = rs.getInt(s"${CarTableDefinitions.columns.garageId}")
         
-        val currentGarage = Car(Some(id), licenceId, brand, model, price, Some(garageId))
+        val currentCar = Car(Some(id), licenceId, brand, model, price, Some(garageId))
         
-        currentGarage :: cars 
+        cars += currentCar
       }
     } catch { 
         case e: Exception => logger.error(s"An error occured on getCars", e)

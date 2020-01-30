@@ -9,4 +9,4 @@ GET     /garages/:id						fr.jbeaucousin.controllers.GarageController.getGarage(
 DELETE  /garages/:id						fr.jbeaucousin.controllers.GarageController.deleteGarage(id: Int)
 
 # Car routes
-POST   	/garages/{garageId}/cars			fr.jbeaucousin.controllers.GarageController.deleteGarage(garageId: Int)
+POST   	/garages/:garageId/cars				fr.jbeaucousin.controllers.CarController.addCar(garageId: Int)

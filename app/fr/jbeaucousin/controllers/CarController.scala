@@ -46,21 +46,26 @@ class CarController @Inject()(
         val garageFound = garageDAO.getGarage(garageId)
         if(garageFound != null) {
           // Check if the garage is not already full
-          val cars = carDAO.getCars(garageId)
-          // Use path id only
-          // Can be crossed with the one in the body for verification
-          car.garageId = garageId
-          val insertedId = carDAO.addGarage(car)
-          logger.debug(s"InsertedId, $insertedId")
-          if(insertedId > -1) {
-            // ControllerConstants.HeaderFields.location -> routes.CarController.getGarage(insertedId).absoluteURL())
-            Future.successful(Created.withHeaders(
-              ControllerConstants.HeaderFields.location -> insertedId.toString())
-            )  
+          val cars = carDAO.getCars(Some(garageId))
+          if((cars.length + 1) > garageFound.maxCarCapacity) {
+            val error = JsonError(UNPROCESSABLE_ENTITY, "Garage has reached its max capacity")
+            Future.successful(UnprocessableEntity(Json.toJson(error)))
           } else {
-            val error = JsonError(INTERNAL_SERVER_ERROR, "An error occured on insertion")
-            Future.successful(InternalServerError(Json.toJson(error)))
-          }       
+            // Use path id only
+            // Can be crossed with the one in the body for verification
+            car.garageId = Some(garageId)
+            val insertedId = carDAO.addGarage(car)
+            logger.debug(s"InsertedId, $insertedId")
+            if(insertedId > -1) {
+              // ControllerConstants.HeaderFields.location -> routes.CarController.getGarage(insertedId).absoluteURL())
+              Future.successful(Created.withHeaders(
+                ControllerConstants.HeaderFields.location -> insertedId.toString())
+              )  
+            } else {
+              val error = JsonError(INTERNAL_SERVER_ERROR, "An error occured on insertion")
+              Future.successful(InternalServerError(Json.toJson(error)))
+            }       
+          }
         } else {
             val error = JsonError(NOT_FOUND, s"Garage identifier ${garageId} not found")
             Future.successful(NotFound(Json.toJson(error)))
