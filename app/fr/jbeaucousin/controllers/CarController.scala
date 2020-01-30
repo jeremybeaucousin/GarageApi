@@ -10,7 +10,7 @@ import play.api.libs.json.{ JsObject, JsValue, Json, Writes, JsResult }
 import scala.concurrent.{ ExecutionContext, Future, Promise }
 
 import fr.jbeaucousin.model.{ JsonError }
-import fr.jbeaucousin.dal.CarDAO
+import fr.jbeaucousin.dal.{ CarDAO, GarageDAO }
 import fr.jbeaucousin.model.Car
 
 /**
@@ -21,6 +21,7 @@ import fr.jbeaucousin.model.Car
 class CarController @Inject()(
     val controllerComponents: ControllerComponents,
     val carDAO: CarDAO,
+    val garageDAO: GarageDAO,
     val action: DefaultActionBuilder) extends BaseController {
 
   val logger: Logger = Logger(this.getClass())
@@ -41,17 +42,30 @@ class CarController @Inject()(
         Future.successful(BadRequest(Json.toJson(error)))  
       } else {
         logger.debug(s"car parsed : ${car.toString()}")
-        val insertedId = carDAO.addGarage(car)
-        logger.debug(s"InsertedId, $insertedId")
-        if(insertedId > -1) {
-          // ControllerConstants.HeaderFields.location -> routes.CarController.getGarage(insertedId).absoluteURL())
-          Future.successful(Created.withHeaders(
-            ControllerConstants.HeaderFields.location -> insertedId.toString())
-          )  
+        // Check if garage exists
+        val garageFound = garageDAO.getGarage(garageId)
+        if(garageFound != null) {
+          // Check if the garage is not already full
+          val cars = carDAO.getCars(garageId)
+          // Use path id only
+          // Can be crossed with the one in the body for verification
+          car.garageId = garageId
+          val insertedId = carDAO.addGarage(car)
+          logger.debug(s"InsertedId, $insertedId")
+          if(insertedId > -1) {
+            // ControllerConstants.HeaderFields.location -> routes.CarController.getGarage(insertedId).absoluteURL())
+            Future.successful(Created.withHeaders(
+              ControllerConstants.HeaderFields.location -> insertedId.toString())
+            )  
+          } else {
+            val error = JsonError(INTERNAL_SERVER_ERROR, "An error occured on insertion")
+            Future.successful(InternalServerError(Json.toJson(error)))
+          }       
         } else {
-          val error = JsonError(INTERNAL_SERVER_ERROR, "An error occured on insertion")
-          Future.successful(InternalServerError(Json.toJson(error)))
-        }          
+            val error = JsonError(NOT_FOUND, s"Garage identifier ${garageId} not found")
+            Future.successful(NotFound(Json.toJson(error)))
+        }
+           
       }
     }
   }
