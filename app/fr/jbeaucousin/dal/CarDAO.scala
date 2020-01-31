@@ -79,27 +79,6 @@ class CarDAO @Inject()(db: Database){
       }
       
       if(priceConditions.isDefined) {
-//        var priceCondition = "AND ("
-//        val priceConditionsList = priceConditions.get
-//        logger.debug(priceConditionsList.length.toString())
-//        for(conditionIndex <- 0 until (priceConditionsList.length)) {
-//          logger.debug("conditionIndex")
-//          logger.debug(conditionIndex.toString())
-//          val condition = priceConditionsList(conditionIndex)
-//          priceCondition = priceCondition.concat(s"${CarTableDefinitions.tableName}.${CarTableDefinitions.columns.price} ${condition.operator} ${condition.value} ")
-//          if (conditionIndex < (priceConditionsList.length -1)) {
-//            val nextCondition = priceConditionsList(conditionIndex + 1)
-//            // Manage the case of a between conditions
-//            if(condition.operator != SqlOperatorEnum.equals && nextCondition.operator != SqlOperatorEnum.equals) {
-//              priceCondition = priceCondition.concat("AND ")
-//            } else {
-//              priceCondition = priceCondition.concat("OR ")
-//            }
-//            
-//          } else {
-//            priceCondition = priceCondition.concat(") ")
-//          }
-//        }
         request = request.concat(DAOUtils.generateConditionRequest(priceConditions.get, CarTableDefinitions.tableName, CarTableDefinitions.columns.price))
       }
       
