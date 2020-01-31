@@ -6,11 +6,13 @@ import play.api.Logger
 import play.api.db._
 
 import scala.collection.mutable.ListBuffer
+
+import java.sql.Statement
 import java.sql.ResultSet
 
-import fr.jbeaucousin.model.Car
+import fr.jbeaucousin.model.{ Car, SqlCondition}
 import fr.jbeaucousin.dal.definitions.{ CarTableDefinitions, GarageTableDefinitions }
-import java.sql.Statement
+import fr.jbeaucousin.model.SqlOperatorEnum
 
 @Singleton
 class CarDAO @Inject()(db: Database){
@@ -64,16 +66,43 @@ class CarDAO @Inject()(db: Database){
     insertedId
   }
 
-  def getCars(garageId: Option[Int]) = {
+  def getCars(garageId: Option[Int], priceConditions: Option[ListBuffer[SqlCondition]]) = {
     val cars = new ListBuffer[Car]()
 
     def requestProcessing(stmt: Statement) = {
       var request = s"SELECT * " +
-          s"FROM ${CarTableDefinitions.tableName} "
-      
+          s"FROM ${CarTableDefinitions.tableName} " +
+          s"WHERE true "
+          
       if(garageId.isDefined) {
-        request = request.concat(s"WHERE ${CarTableDefinitions.tableName}.${CarTableDefinitions.columns.garageId} = '${garageId.get}'")
+        request = request.concat(s"AND ${CarTableDefinitions.tableName}.${CarTableDefinitions.columns.garageId} = '${garageId.get}' ")
       }
+      
+      if(priceConditions.isDefined) {
+//        var priceCondition = "AND ("
+//        val priceConditionsList = priceConditions.get
+//        logger.debug(priceConditionsList.length.toString())
+//        for(conditionIndex <- 0 until (priceConditionsList.length)) {
+//          logger.debug("conditionIndex")
+//          logger.debug(conditionIndex.toString())
+//          val condition = priceConditionsList(conditionIndex)
+//          priceCondition = priceCondition.concat(s"${CarTableDefinitions.tableName}.${CarTableDefinitions.columns.price} ${condition.operator} ${condition.value} ")
+//          if (conditionIndex < (priceConditionsList.length -1)) {
+//            val nextCondition = priceConditionsList(conditionIndex + 1)
+//            // Manage the case of a between conditions
+//            if(condition.operator != SqlOperatorEnum.equals && nextCondition.operator != SqlOperatorEnum.equals) {
+//              priceCondition = priceCondition.concat("AND ")
+//            } else {
+//              priceCondition = priceCondition.concat("OR ")
+//            }
+//            
+//          } else {
+//            priceCondition = priceCondition.concat(") ")
+//          }
+//        }
+        request = request.concat(DAOUtils.generateConditionRequest(priceConditions.get, CarTableDefinitions.tableName, CarTableDefinitions.columns.price))
+      }
+      
       request = request.concat(";")
       
       logger.debug(s"request : ${request}")

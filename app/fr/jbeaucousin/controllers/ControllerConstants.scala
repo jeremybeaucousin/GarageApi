@@ -14,4 +14,9 @@ final object ControllerConstants {
     final val ApiKey = "ApiKey"
     final val Basic = "Basic"
   }
+  
+  final object QueryParams {
+    final val CommaSeparator = ","
+    final val ColonSeparator = ":"
+  }
 }

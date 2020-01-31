@@ -9,9 +9,13 @@ import play.api.mvc.Results
 import play.api.libs.json.{ JsObject, JsValue, Json, Writes, JsResult }
 
 import scala.concurrent.{ ExecutionContext, Future, Promise }
+import scala.collection.mutable.ListBuffer
 
 import fr.jbeaucousin.model.{ JsonError, Car, Garage  }
 import fr.jbeaucousin.dal.{ CarDAO, GarageDAO }
+import fr.jbeaucousin.dal.DAOUtils
+import fr.jbeaucousin.model.SqlCondition
+
 
 /**
  * This controller creates an `Action` to handle HTTP requests to the
@@ -45,7 +49,7 @@ class CarController @Inject()(
           logger.debug(s"car parsed : ${car.toString()}")
           def carProcessing(garage: Garage) = {
             // Check if the garage is not already full
-            val cars = carDAO.getCars(Some(garageId))
+            val cars = carDAO.getCars(Some(garageId), None)
             if((cars.length + 1) > garage.maxCarCapacity) {
               val error = JsonError(UNPROCESSABLE_ENTITY, "Garage has reached its max capacity", None)
               Future.successful(UnprocessableEntity(Json.toJson(error)))
@@ -73,11 +77,16 @@ class CarController @Inject()(
     ControllerUtils.handleException(callProcessing)
   }
   
-  def getCars(garageId: Int) = action.async { implicit request: Request[AnyContent] =>
+  def getCars(garageId: Int, price: Option[String]) = action.async { implicit request: Request[AnyContent] =>
     def callProcessing() = {
       logger.debug(s"GarageID received : ${garageId.toString()}")
+      var priceConditions: Option[ListBuffer[SqlCondition]] = None
+      if(price.isDefined) {
+        priceConditions = Some(DAOUtils.extractConditions(price.get))
+        logger.debug(priceConditions.toString())
+      }
       def carProcessing(garage: Garage) = {
-        val cars = carDAO.getCars(Some(garageId))
+        val cars = carDAO.getCars(Some(garageId), priceConditions)
         logger.debug(s"cars found : ${cars.toString()}")
         Future.successful(Ok(Json.toJson(cars)))
       }
